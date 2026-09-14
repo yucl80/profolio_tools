@@ -27,7 +27,7 @@ python backtest.py --indices 成长100 价值100 红利低波 科创成长 创�
 python backtest.py --indices 成长100 价值100 红利低波 --start 2015-01-05 --end 2025-12-31
 ```
 
-程序按 `lookback` 个交易日滚动训练，每 `rebalance` 个交易日再平衡一次。默认优化目标为纯最大化夏普比率；也支持 `--model risk-parity` 风险平价模型，使各指数对组合总风险的贡献尽量相等。如需额外提高收益率权重，可通过 `--return-weight` 调整。回测结果写入 `backtest_output/metrics.csv`、`weights.csv`、`latest_weights.csv` 和 `portfolio_curve.csv`。其中 `latest_weights.csv` 保存最后一次再平衡的资产比例，并附带该组合的年化收益率、年化波动率和夏普比率；`weights.csv` 保存全部历史再平衡比例。
+程序按 `lookback` 个交易日滚动训练，每 `rebalance` 个交易日再平衡一次。默认优化目标为纯最大化夏普比率；也支持 `--model risk-parity` 风险平价模型，使各指数对组合总风险的贡献尽量相等。如需额外提高收益率权重，可通过 `--return-weight` 调整。运行产生的缓存和结果默认写入 `tmp/`，例如 `tmp/backtest_output/metrics.csv`、`weights.csv`、`latest_weights.csv` 和 `portfolio_curve.csv`。其中 `latest_weights.csv` 保存最后一次再平衡的资产比例，并附带该组合的年化收益率、年化波动率和夏普比率；`weights.csv` 保存全部历史再平衡比例。
 
 例如只测试价值和成长指数，并每月再平衡：
 
@@ -64,7 +64,7 @@ python backtest.py --model risk-budget --risk-budgets '{"成长100":0.30,"价值
 四个模型完成回测后，运行以下命令，将模型名称、实际回测起止日期、年化收益率、年化波动率、夏普比率、最大回撤和最终资产比例合并到一个 HTML 文件：
 
 ```powershell
-python report.py --output portfolio_report.html
+python report.py --output tmp/portfolio_report.html
 ```
 
 默认读取 `test_max_sharpe`、`test_risk_parity`、`test_mpt_vol` 和 `test_mpt_return` 四个目录。也可以自定义目录和模型名称：

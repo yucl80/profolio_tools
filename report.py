@@ -8,6 +8,8 @@ import pandas as pd
 
 from backtest import INDEXES, _read_cache
 
+TMP_DIR = Path(__file__).resolve().parent / "tmp"
+
 
 DEFAULT_MODELS = {
     "test_max_sharpe": "最大夏普",
@@ -186,7 +188,7 @@ td {{ font-variant-numeric:tabular-nums; }}
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="合并多个组合模型结果为 HTML 报告")
-    parser.add_argument("--output", type=Path, default=Path("portfolio_report.html"))
+    parser.add_argument("--output", type=Path, default=TMP_DIR / "portfolio_report.html")
     parser.add_argument("--model-dir", action="append", metavar="目录=模型名称", help="自定义模型目录和名称，可重复传入")
     return parser.parse_args()
 

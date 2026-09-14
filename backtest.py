@@ -12,7 +12,8 @@ import pandas as pd
 import requests
 from scipy.optimize import minimize
 
-CACHE_DIR = Path(__file__).resolve().parent / ".cache" / "index_prices"
+TMP_DIR = Path(__file__).resolve().parent / "tmp"
+CACHE_DIR = TMP_DIR / "cache" / "index_prices"
 
 
 @dataclass(frozen=True)
@@ -332,7 +333,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mpt-objective", choices=["max-return-at-volatility", "min-volatility-at-return"], default="max-return-at-volatility", help="MPT目标：给定波动率最大化收益，或给定收益率最小化波动率")
     parser.add_argument("--mpt-target", type=float, default=0.20, help="MPT目标值：波动率或年化收益率，小数表示，例如 0.20")
     parser.add_argument("--risk-budgets", type=str, default="", help="风险贡献上限 JSON，例如 {\"国证成长100\":0.30,\"国证价值100\":0.30,...}")
-    parser.add_argument("--output-dir", type=Path, default=Path("backtest_output"))
+    parser.add_argument("--output-dir", type=Path, default=TMP_DIR / "backtest_output")
     return parser.parse_args()
 
 

@@ -2,6 +2,7 @@
 __pycache__/
 .streamlit/
 .cache/
+tmp/
 *.pyc
 *_output/
 test_*/

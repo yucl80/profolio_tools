@@ -22,7 +22,7 @@ st.set_page_config(page_title="指数组合实验室", page_icon="◈", layout="
 
 CSI_HOME = "https://www.csindex.com.cn/"
 CNI_HOME = "https://www.cnindex.com.cn/"
-CACHE_DIR = Path(__file__).resolve().parent / ".cache" / "index_prices"
+CACHE_DIR = Path(__file__).resolve().parent / "tmp" / "cache" / "index_prices"
 
 
 @dataclass(frozen=True)
