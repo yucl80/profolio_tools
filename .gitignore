@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.streamlit/
+.cache/
+*.pyc
+*_output/
+test_*/
+rerun_*/
+overall_*/
+full_total_*/
+ten_year_*/
+final_test_*/
+portfolio_report.html
+*_portfolio_report.html
