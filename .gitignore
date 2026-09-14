@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 *_output/
 test_*/
+*_test/
 rerun_*/
 overall_*/
 full_total_*/
