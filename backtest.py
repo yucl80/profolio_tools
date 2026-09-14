@@ -31,7 +31,7 @@ INDEXES = {
     "科创成长": BacktestIndex("000690", "中证科创成长", "中证指数", ("H30705",)),
     "创业板成长": BacktestIndex("399667", "国证创业板成长", "国证指数"),
     "自由现金流": BacktestIndex("980092", "国证自由现金流", "国证指数", ("480092",)),
-    "黄金": BacktestIndex("931238", "中证沪深港黄金产业股票", "中证指数"),
+    "黄金ETF": BacktestIndex("518880", "黄金ETF华安", "东方财富ETF"),
 }
 
 
@@ -92,6 +92,33 @@ def _parse_payload(payload: Any) -> pd.Series:
     return result.set_index("date")["price"].rename("price")
 
 
+def _parse_eastmoney_payload(payload: Any) -> pd.Series:
+    data = payload.get("data") if isinstance(payload, dict) else None
+    rows = data.get("klines") if isinstance(data, dict) else None
+    if not rows:
+        raise ValueError("东方财富返回中没有历史行情记录")
+    records = [row.split(",") for row in rows]
+    frame = pd.DataFrame({"date": [row[0] for row in records], "price": [row[2] for row in records]})
+    result = pd.DataFrame({"date": pd.to_datetime(frame["date"], errors="coerce", format="mixed"), "price": frame["price"].map(_number)})
+    result = result.dropna().drop_duplicates("date").sort_values("date")
+    if len(result) < 2:
+        raise ValueError("东方财富返回的有效数据不足 2 个交易日")
+    return result.set_index("date")["price"].rename("price")
+
+
+def _parse_sina_payload(payload: Any) -> pd.Series:
+    if not isinstance(payload, list) or not payload:
+        raise ValueError("新浪返回中没有历史行情记录")
+    frame = pd.DataFrame(payload)
+    if "day" not in frame.columns or "close" not in frame.columns:
+        raise ValueError(f"无法识别新浪日期/收盘价字段: {list(frame.columns)}")
+    result = pd.DataFrame({"date": pd.to_datetime(frame["day"], errors="coerce", format="mixed"), "price": frame["close"].map(_number)})
+    result = result.dropna().drop_duplicates("date").sort_values("date")
+    if len(result) < 2:
+        raise ValueError("新浪返回的有效数据不足 2 个交易日")
+    return result.set_index("date")["price"].rename("price")
+
+
 def _cache_path(index: BacktestIndex, code: str | None = None) -> Path:
     return CACHE_DIR / f"{index.provider}_{code or index.code}.csv"
 
@@ -115,20 +142,25 @@ def _write_cache(index: BacktestIndex, prices: pd.Series, code: str | None = Non
 
 
 def _remote_fetch(index: BacktestIndex, code: str, start: date, end: date) -> pd.Series:
-    if index.provider == "中证指数":
+    if index.provider == "东方财富ETF":
         candidates = [
-            ("https://www.csindex.com.cn/csindex-home/perf/index-perf", {"indexCode": code, "startDate": start.isoformat(), "endDate": end.isoformat()}),
+            ("https://push2his.eastmoney.com/api/qt/stock/kline/get", {"secid": f"1.{code}", "ut": "fa5fd1943c7b386f172d6893dbfba10b", "fields1": "f1,f2,f3,f4,f5,f6", "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61", "klt": "101", "fqt": "1", "beg": start.strftime("%Y%m%d"), "end": end.strftime("%Y%m%d")}, _parse_eastmoney_payload),
+            ("https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData", {"symbol": f"sh{code}", "scale": "240", "ma": "no", "datalen": "6000"}, _parse_sina_payload),
+        ]
+    elif index.provider == "中证指数":
+        candidates = [
+            ("https://www.csindex.com.cn/csindex-home/perf/index-perf", {"indexCode": code, "startDate": start.isoformat(), "endDate": end.isoformat()}, _parse_payload),
         ]
     else:
         candidates = [
-            ("https://hq.cnindex.com.cn/market/market/getIndexDailyDataWithDataFormat", {"indexCode": code, "startDate": start.isoformat(), "endDate": end.isoformat(), "frequency": "day"}),
+            ("https://hq.cnindex.com.cn/market/market/getIndexDailyDataWithDataFormat", {"indexCode": code, "startDate": start.isoformat(), "endDate": end.isoformat(), "frequency": "day"}, _parse_payload),
         ]
     errors = []
-    for url, params in candidates:
+    for url, params, parse in candidates:
         try:
             response = requests.get(url, params=params, timeout=30, headers={"User-Agent": "portfolio-tools-backtest/1.0"})
             response.raise_for_status()
-            return _parse_payload(response.json())
+            return parse(response.json())
         except (requests.RequestException, ValueError, json.JSONDecodeError) as exc:
             errors.append(f"{url}: {exc}")
     raise RuntimeError("; ".join(errors))
